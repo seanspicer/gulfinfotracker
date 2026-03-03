@@ -1,0 +1,65 @@
+[
+  {
+    "pluginId": "uae-gov",
+    "displayName": "UAE Government Portal",
+    "country": "UAE",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://www.uaecabinet.ae/en/rss"
+  },
+  {
+    "pluginId": "saudi-spa",
+    "displayName": "Saudi Press Agency",
+    "country": "SA",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://www.spa.gov.sa/rss.php"
+  },
+  {
+    "pluginId": "qatar-qna",
+    "displayName": "Qatar News Agency",
+    "country": "QA",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://www.qna.org.qa/en/News/Rss"
+  },
+  {
+    "pluginId": "bahrain-bna",
+    "displayName": "Bahrain News Agency",
+    "country": "BH",
+    "type": "government",
+    "enabled": false,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://www.bna.bh/en/rss"
+  },
+  {
+    "pluginId": "ft",
+    "displayName": "Financial Times",
+    "country": "INTL",
+    "type": "news",
+    "enabled": false,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.ft.com/rss/home/middle-east"
+  },
+  {
+    "pluginId": "wsj",
+    "displayName": "Wall Street Journal",
+    "country": "INTL",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://feeds.a.dj.com/rss/RSSWorldNews.xml"
+  },
+  {
+    "pluginId": "nyt",
+    "displayName": "New York Times",
+    "country": "INTL",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml"
+  }
+]

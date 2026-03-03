@@ -1,0 +1,39 @@
+{
+  "appName": "Gulf Info Tracker",
+  "search": "Search articles...",
+  "language": "EN",
+  "allTopics": "All Topics",
+  "allCountries": "All Countries",
+  "topics": {
+    "T1": "Politics & Government",
+    "T2": "Economy & Finance",
+    "T3": "Energy & Oil",
+    "T4": "Business & Investment",
+    "T5": "Iran / Israel / US Conflict"
+  },
+  "countries": {
+    "UAE": "UAE",
+    "SA": "Saudi Arabia",
+    "QA": "Qatar",
+    "BH": "Bahrain",
+    "INTL": "International"
+  },
+  "credibility": {
+    "verified": "Verified",
+    "credible": "Credible",
+    "uncertain": "Uncertain",
+    "low": "Low",
+    "pending": "Scoring pending"
+  },
+  "viewOriginal": "View original source",
+  "machineTranslated": "Machine translated",
+  "loadMore": "Load more",
+  "noResults": "No articles found",
+  "adminSources": "Source Health",
+  "lastPolled": "Last polled",
+  "articles24h": "Articles (24h)",
+  "lastError": "Last error",
+  "triggerPoll": "Poll now",
+  "pollTriggered": "Poll triggered",
+  "back": "Back"
+}
