@@ -1,0 +1,118 @@
+# ============================================================
+# React / Node.js
+# ============================================================
+node_modules/
+dist/
+build/
+.next/
+out/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
+coverage/
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
+
+# Env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+.idea/
+.vscode/
+
+# ============================================================
+# .NET / C#
+# ============================================================
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio artifacts
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+[Pp]ublish/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+nuget.config
+
+# Rider
+.idea/
+*.sln.iml
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# MSTest / test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+[Rr]eleaseHistory.xml
+
+# Benchmark results
+BenchmarkDotNet.Artifacts/
+
+# Crash dumps
+*.pidb
+*.svclog
+*.scc
+
+# ASP.NET
+wwwroot/dist/
+
+# Entity Framework migrations (keep the folder, ignore snapshots if desired)
+# *.Designer.cs   # uncomment if you want to ignore EF designer files
+
+# Azure / publish profiles
+*.pubxml
+*.pubxml.user
+PublishScripts/
+
+# Dotnet tool manifests are generally committed; ignore local overrides
+.config/dotnet-tools.json.user
