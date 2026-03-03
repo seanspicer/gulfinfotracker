@@ -9,6 +9,12 @@ by an AI agent team (powered by Anthropic Claude) which produces a credibility s
 reasoning. Sources are implemented as independently deployable plugins so new outlets can be added
 without changing core application code.
 
+The entire solution — React frontend, ASP.NET Core API, Redis cache, and SQL database — is
+orchestrated locally and deployed to Azure using **.NET Aspire**. Aspire provides the AppHost
+project that wires all services together, injects connection strings and service URLs automatically,
+and publishes a deployment manifest consumed by the Azure Developer CLI (`azd`) to provision Azure
+Container Apps.
+
 The application solves a specific problem: in a region where state-affiliated media and genuine
 official government communications co-exist with speculation and disinformation, readers need a
 single, trusted aggregator that distinguishes verified official information from editorial opinion —
@@ -28,6 +34,8 @@ with transparent AI-assisted reasoning for every scoring decision.
   zero changes to core ingestion or scoring logic.
 - Deliver a fast, usable experience on mobile devices (< 3G-equivalent conditions considered).
 - Deploy entirely on Azure with no vendor lock-in at the application layer.
+- Use .NET Aspire as the single orchestration layer for local development and Azure deployment,
+  eliminating manual Docker Compose or per-service launch configuration.
 
 ---
 
@@ -216,7 +224,27 @@ of a specific event or person.
 
 ---
 
-### US-011: Admin source management page (internal, no auth required on MVP)
+### US-011: .NET Aspire solution setup and local orchestration
+**Description:** As a developer, I want the entire solution orchestrated by a .NET Aspire AppHost
+so that I can run all services locally with a single `dotnet run --project AppHost` command and
+observe them through the Aspire dashboard.
+
+**Acceptance Criteria:**
+- [ ] Solution contains `GulfInfoTracker.AppHost`, `GulfInfoTracker.ServiceDefaults`, `GulfInfoTracker.Api`,
+      and `GulfInfoTracker.Web` projects.
+- [ ] `dotnet run --project src/GulfInfoTracker.AppHost` starts the API, the React dev server,
+      a local SQL Server container, and a local Redis container without manual setup.
+- [ ] The Aspire dashboard is accessible at `https://localhost:15888` and shows all resources as
+      healthy.
+- [ ] The React frontend successfully calls the API using the Aspire-injected service URL (no
+      hardcoded localhost ports).
+- [ ] OTel traces from the API appear in the Aspire dashboard trace explorer.
+- [ ] `azd up` from the repo root successfully deploys all resources to an Azure subscription
+      using the Aspire-generated Bicep manifest.
+
+---
+
+### US-012: Admin source management page (internal, unauthenticated in MVP)
 **Description:** As an operator, I want a simple admin page that shows the health of each source
 plugin (last poll time, article count, error count) so that I can quickly diagnose ingestion problems.
 
@@ -248,10 +276,17 @@ plugin (last poll time, article count, error count) so that I can quickly diagno
 - **FR-8:** Cross-source corroboration: when scoring, the Scoring Agent must be provided with the
   count of distinct plugins that have published an article on the same event within ± 24 hours
   (matched by shared named entities).
-- **FR-9:** The application must run on Azure App Service (backend) and Azure Static Web Apps
-  (frontend), with Azure SQL Database for persistence and Azure Cache for Redis for feed caching.
+- **FR-9:** The solution must be orchestrated by a `.NET Aspire` AppHost project
+  (`GulfInfoTracker.AppHost`) that declares all resources: the ASP.NET Core API, the React frontend
+  (as a Node.js/Vite resource), Azure SQL Database, and Azure Cache for Redis. Service-to-service
+  URLs and connection strings must be injected by Aspire — not hardcoded. Deployment to Azure is
+  performed via `azd up`, targeting Azure Container Apps.
 - **FR-10:** All environment secrets (Claude API key, connection strings) must be stored in Azure
-  Key Vault, not in `appsettings.json`.
+  Key Vault, referenced from the Aspire AppHost manifest so `azd` provisions and links them
+  automatically. Secrets must never appear in `appsettings.json` or in source control.
+- **FR-11:** A `GulfInfoTracker.ServiceDefaults` project must be referenced by the API project and
+  apply shared Aspire service defaults: OpenTelemetry traces + metrics, standardised health-check
+  endpoints (`/health/live`, `/health/ready`), and resilience defaults.
 
 ---
 
@@ -264,6 +299,7 @@ plugin (last poll time, article count, error count) so that I can quickly diagno
 - Real-time WebSocket feed updates (polling is acceptable for v1).
 - Moderation or editorial override of AI scores.
 - Mobile native apps (iOS / Android) — web only.
+- Manual Docker Compose setup — Aspire handles local container orchestration.
 - Any content from non-allowlisted sources.
 - Automated fact-checking against external databases (e.g. Wikidata, GDELT).
 - Paid API subscriptions for FT / WSJ / NYT.
@@ -296,37 +332,75 @@ plugin (last poll time, article count, error count) so that I can quickly diagno
 
 ## Technical Considerations
 
-### Backend (ASP.NET Core)
-- **Plugin system:** `ISourcePlugin` resolved via .NET DI; plugins registered in `services.json`
+### Solution Structure (.NET Aspire)
+```
+GulfInfoTracker.sln
+├── src/
+│   ├── GulfInfoTracker.AppHost/        # Aspire orchestrator — declares all resources
+│   ├── GulfInfoTracker.ServiceDefaults/ # Shared OTel, health checks, resilience
+│   ├── GulfInfoTracker.Api/            # ASP.NET Core Web API
+│   ├── GulfInfoTracker.Web/            # React + Vite frontend (Node.js resource in Aspire)
+│   └── GulfInfoTracker.Plugins/        # ISourcePlugin implementations
+└── tests/
+    ├── GulfInfoTracker.Api.Tests/
+    └── GulfInfoTracker.Plugins.Tests/
+```
+
+### .NET Aspire AppHost
+- The AppHost (`Program.cs`) declares resources using the Aspire hosting API:
+  ```csharp
+  var sql   = builder.AddAzureSqlDatabase("sql");
+  var redis = builder.AddAzureRedis("redis");
+  var api   = builder.AddProject<Projects.GulfInfoTracker_Api>("api")
+                     .WithReference(sql)
+                     .WithReference(redis);
+  var web   = builder.AddNpmApp("web", "../GulfInfoTracker.Web")
+                     .WithReference(api)
+                     .WithHttpEndpoint(env: "PORT");
+  ```
+- In local development, Aspire spins up SQL Server and Redis via Docker containers automatically.
+- `azd up` reads the Aspire manifest and provisions Azure Container Apps, Azure SQL, Azure Cache
+  for Redis, Azure Container Registry, and Azure Key Vault.
+- The Aspire developer dashboard (localhost) provides real-time logs, traces, and resource health
+  during local development — no separate Seq or Jaeger setup required.
+
+### Backend (ASP.NET Core — `GulfInfoTracker.Api`)
+- References `GulfInfoTracker.ServiceDefaults` to apply OTel, health checks, and resilience.
+- **Plugin system:** `ISourcePlugin` resolved via .NET DI; plugins registered in `sources.json`
   config (not hardcoded in `Program.cs`).
 - **Background services:** `IHostedService` + `PeriodicTimer` for ingestion scheduler.
-- **Claude integration:** Use the Anthropic .NET SDK (or raw HTTP client if SDK not available);
-  wrap in a typed `ICredibilityPipeline` interface to allow test mocking.
-- **Database:** Entity Framework Core with Azure SQL; migrations committed to repo.
-- **Caching:** Redis for the main feed endpoint (5-minute TTL); cache invalidated on new article
-  insert.
+- **Claude integration:** Anthropic .NET SDK (or raw `HttpClient` if SDK unavailable); wrapped in
+  `ICredibilityPipeline` for test mocking.
+- **Database:** Entity Framework Core with Azure SQL via `Aspire.Microsoft.EntityFrameworkCore.SqlServer`
+  integration package; migrations committed to repo.
+- **Caching:** Redis via `Aspire.StackExchange.Redis`; 5-minute TTL on feed endpoint; invalidated
+  on new article insert.
 - **Translation:** Claude API with a dedicated translate-only system prompt; results cached in DB.
 
-### Frontend (React)
+### Frontend (React — `GulfInfoTracker.Web`)
 - **Build tool:** Vite.
 - **Routing:** React Router v6.
-- **State:** React Query (TanStack Query) for server state; no global state library needed for v1.
+- **State:** TanStack Query for server state; no global state library needed for v1.
 - **i18n:** `react-i18next` for UI strings; article content served pre-translated from API.
-- **Styling:** Tailwind CSS with RTL plugin (`tailwindcss-rtl` or logical properties).
-- **Testing:** Vitest + React Testing Library for unit tests.
+- **Styling:** Tailwind CSS with CSS logical properties for RTL support.
+- **Testing:** Vitest + React Testing Library.
+- Aspire injects the backend API base URL via the `services__api__https__0` environment variable
+  (standard Aspire service-binding convention); Vite exposes this as `VITE_API_URL`.
 
-### Azure Deployment
-| Resource                  | SKU (dev)         | Notes                               |
-|---------------------------|-------------------|-------------------------------------|
-| Azure App Service         | B1                | Backend API                         |
-| Azure Static Web Apps     | Free              | React frontend                      |
-| Azure SQL Database        | Basic             | Upgrade to Standard for production  |
-| Azure Cache for Redis     | C0 Basic          | Feed cache                          |
-| Azure Key Vault           | Standard          | Secrets                             |
-| Azure Container Registry  | Basic             | If containerised later              |
+### Azure Deployment (via `azd` + Aspire manifest)
+| Resource                       | SKU (dev)     | Notes                                     |
+|--------------------------------|---------------|-------------------------------------------|
+| Azure Container Apps Env       | Consumption   | Hosts API and Web containers              |
+| Azure Container Registry       | Basic         | Stores built images                       |
+| Azure SQL Database             | Basic         | Upgrade to Standard for production        |
+| Azure Cache for Redis          | C0 Basic      | Feed cache                                |
+| Azure Key Vault                | Standard      | Claude API key, connection strings        |
+| Azure Monitor / App Insights   | Pay-as-you-go | Receives OTel traces + metrics from Aspire|
 
-- CI/CD via GitHub Actions with environment-specific slots.
-- Backend Dockerfile provided for local Docker Compose dev environment.
+- `azd` provisions all resources from the Aspire-generated manifest; no manual ARM/Bicep authoring
+  required for initial deployment (Aspire generates Bicep under the hood).
+- CI/CD via GitHub Actions: `azd pipeline config` scaffolds the workflow automatically.
+- No separate Docker Compose file needed — Aspire replaces it for local development.
 
 ### API Shape (key endpoints)
 ```
