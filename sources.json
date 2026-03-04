@@ -196,5 +196,15 @@
     "enabled": true,
     "pollIntervalMinutes": 30,
     "feedUrl": "https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml"
+  },
+  {
+    "pluginId": "uae-mod-x",
+    "displayName": "UAE Ministry of Defence (X)",
+    "country": "UAE",
+    "type": "x",
+    "enabled": false,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://x.com/modgovae",
+    "language": "ar"
   }
 ]

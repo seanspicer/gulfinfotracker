@@ -1,6 +1,7 @@
 using GulfInfoTracker.Plugins.Abstractions;
 using GulfInfoTracker.Plugins.Government;
 using GulfInfoTracker.Plugins.News;
+using GulfInfoTracker.Plugins.Social;
 
 namespace GulfInfoTracker.Plugins;
 
@@ -12,6 +13,15 @@ public class PluginFactory(IEnumerable<SourceConfig> configs, IHttpClientFactory
         foreach (var cfg in configs.Where(c => c.Enabled))
         {
             var http = httpClientFactory.CreateClient(cfg.PluginId);
+
+            // X (Twitter) plugins are identified by type, not by a specific plugin ID,
+            // so any account added to sources.json with type "x" works automatically.
+            if (cfg.Type == "x")
+            {
+                result.Add(new XSourcePlugin(cfg, http));
+                continue;
+            }
+
             ISourcePlugin? plugin = cfg.PluginId switch
             {
                 // UAE

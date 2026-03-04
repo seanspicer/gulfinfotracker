@@ -7,5 +7,6 @@ public record SourceConfig(
     string Type,
     bool Enabled,
     int PollIntervalMinutes,
-    string FeedUrl
+    string FeedUrl,
+    string Language = "en"   // "en" or "ar" — used by plugins that can't auto-detect
 );

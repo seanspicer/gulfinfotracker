@@ -25,7 +25,7 @@ builder.Services.AddScoped<ISourcePollLogRepository, SourcePollLogRepository>();
 // Plugins – sources.json is copied to output directory by the csproj Content item
 var sourcesJsonPath = Path.Combine(AppContext.BaseDirectory, "sources.json");
 Console.WriteLine($"[Plugins] Loading sources from: {sourcesJsonPath} (exists={File.Exists(sourcesJsonPath)})");
-builder.Services.AddPlugins(sourcesJsonPath);
+builder.Services.AddPlugins(sourcesJsonPath, builder.Configuration);
 
 // Ingestion
 builder.Services.AddScoped<IIngestionProcessor, IngestionProcessor>();
