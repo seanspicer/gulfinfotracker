@@ -8,10 +8,11 @@ export function useArticles(page = 1) {
   const country = searchParams.get('country') || undefined
   const q       = searchParams.get('q')       || undefined
   const sortBy  = searchParams.get('sortBy')  || undefined
+  const sources = searchParams.getAll('sources')
 
   return useQuery({
-    queryKey: ['articles', { topic, country, q, sortBy, page }],
-    queryFn: () => apiClient.getArticles({ topic, country, q, sortBy, page, pageSize: 20 }),
+    queryKey: ['articles', { topic, country, q, sortBy, sources, page }],
+    queryFn: () => apiClient.getArticles({ topic, country, q, sortBy, page, pageSize: 20, sources: sources.length ? sources : undefined }),
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 30,
   })

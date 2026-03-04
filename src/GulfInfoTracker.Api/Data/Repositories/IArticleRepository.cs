@@ -9,7 +9,8 @@ public record ArticleQuery(
     int Page = 1,
     int PageSize = 20,
     bool ScoredOnly = false,
-    string SortBy = "newest"
+    string SortBy = "newest",
+    IReadOnlyList<string>? Sources = null
 );
 
 public record ArticleQueryResult(IReadOnlyList<Article> Data, int Total);

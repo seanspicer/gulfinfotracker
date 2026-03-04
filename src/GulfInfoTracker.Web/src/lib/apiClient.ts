@@ -50,6 +50,7 @@ export const apiClient = {
     sortBy?: string
     page?: number
     pageSize?: number
+    sources?: string[]
   }) => {
     const sp = new URLSearchParams()
     if (params.topic)    sp.set('topic',    params.topic)
@@ -58,6 +59,7 @@ export const apiClient = {
     if (params.sortBy)   sp.set('sortBy',   params.sortBy)
     if (params.page)     sp.set('page',     String(params.page))
     if (params.pageSize) sp.set('pageSize', String(params.pageSize))
+    params.sources?.forEach(s => sp.append('sources', s))
     return apiFetch<PagedResult<ArticleListItem>>(`/api/articles?${sp}`)
   },
 

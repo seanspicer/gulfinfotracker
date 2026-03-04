@@ -29,6 +29,9 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
         if (!string.IsNullOrWhiteSpace(query.Country))
             q = q.Where(a => a.Country.ToLower() == query.Country.ToLower());
 
+        if (query.Sources is { Count: > 0 })
+            q = q.Where(a => query.Sources.Contains(a.PluginId));
+
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
             var search = query.Q.ToLower();

@@ -39,7 +39,7 @@ public class ArticlesControllerTests
         _repoMock.Setup(r => r.QueryAsync(It.IsAny<ArticleQuery>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new ArticleQueryResult(articles, 1));
 
-        var result = await _controller.GetArticles(null, null, null, "newest", 1, 20, CancellationToken.None);
+        var result = await _controller.GetArticles(null, null, null, "newest", 1, 20, null, CancellationToken.None);
 
         var ok = result.Result as OkObjectResult;
         Assert.That(ok, Is.Not.Null);
@@ -56,7 +56,7 @@ public class ArticlesControllerTests
         _repoMock.Setup(r => r.QueryAsync(It.Is<ArticleQuery>(q => q.Topic == "T3"), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new ArticleQueryResult([], 0));
 
-        await _controller.GetArticles("T3", null, null, "newest", 1, 20, CancellationToken.None);
+        await _controller.GetArticles("T3", null, null, "newest", 1, 20, null, CancellationToken.None);
 
         _repoMock.Verify(r => r.QueryAsync(
             It.Is<ArticleQuery>(q => q.Topic == "T3"),
@@ -69,7 +69,7 @@ public class ArticlesControllerTests
         _repoMock.Setup(r => r.QueryAsync(It.Is<ArticleQuery>(q => q.Country == "UAE"), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new ArticleQueryResult([], 0));
 
-        await _controller.GetArticles(null, "UAE", null, "newest", 1, 20, CancellationToken.None);
+        await _controller.GetArticles(null, "UAE", null, "newest", 1, 20, null, CancellationToken.None);
 
         _repoMock.Verify(r => r.QueryAsync(
             It.Is<ArticleQuery>(q => q.Country == "UAE"),

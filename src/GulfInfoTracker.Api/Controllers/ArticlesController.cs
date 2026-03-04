@@ -17,12 +17,13 @@ public class ArticlesController(IArticleRepository repo) : ControllerBase
         [FromQuery] string sortBy = "newest",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string[]? sources = null,
         CancellationToken ct = default)
     {
         if (pageSize > 100) pageSize = 100;
         if (page < 1) page = 1;
 
-        var query = new ArticleQuery(topic, country, q, page, pageSize, ScoredOnly: true, SortBy: sortBy);
+        var query = new ArticleQuery(topic, country, q, page, pageSize, ScoredOnly: true, SortBy: sortBy, Sources: sources);
         var result = await repo.QueryAsync(query, ct);
 
         var items = result.Data.Select(MapToListItem).ToList();
