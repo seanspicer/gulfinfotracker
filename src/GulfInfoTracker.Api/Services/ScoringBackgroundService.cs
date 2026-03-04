@@ -18,6 +18,11 @@ public class ScoringBackgroundService(
     {
         logger.LogInformation("Scoring background service started.");
 
+        // Reset any articles stuck at max attempts (e.g. from previous failed runs).
+        await ResetStuckArticlesAsync(stoppingToken);
+
+        // Score immediately on startup, then on each interval tick.
+        await ScoreBatchAsync(stoppingToken);
         using var timer = new PeriodicTimer(Interval);
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -25,11 +30,40 @@ public class ScoringBackgroundService(
         }
     }
 
+    private async Task ResetStuckArticlesAsync(CancellationToken ct)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var pipeline = scope.ServiceProvider.GetService<ICredibilityPipeline>();
+        if (pipeline is null) return;
+
+        var repo = scope.ServiceProvider.GetRequiredService<IArticleRepository>();
+        await repo.ResetScoringAttemptsAsync(ct);
+        logger.LogInformation("Reset scoring attempts for stuck articles.");
+    }
+
     private async Task ScoreBatchAsync(CancellationToken ct)
+    {
+        try
+        {
+            await ScoreBatchCoreAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Unhandled error in scoring batch — service will continue.");
+        }
+    }
+
+    private async Task ScoreBatchCoreAsync(CancellationToken ct)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var repo     = scope.ServiceProvider.GetRequiredService<IArticleRepository>();
-        var pipeline = scope.ServiceProvider.GetRequiredService<ICredibilityPipeline>();
+        var pipeline = scope.ServiceProvider.GetService<ICredibilityPipeline>();
+
+        if (pipeline is null)
+        {
+            logger.LogWarning("ICredibilityPipeline is not registered — check AiProvider config and API key.");
+            return;
+        }
 
         var unscored = await repo.GetUnscoredAsync(MaxAttempts, batchSize: 20, ct);
         if (unscored.Count == 0) return;

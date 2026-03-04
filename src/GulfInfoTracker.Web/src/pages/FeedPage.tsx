@@ -4,6 +4,7 @@ import { ArticleCard } from '../components/ArticleCard'
 import { SkeletonCard } from '../components/SkeletonCard'
 import { TopicFilter } from '../components/TopicFilter'
 import { CountryFilter } from '../components/CountryFilter'
+import { SortFilter } from '../components/SortFilter'
 import { useArticles } from '../hooks/useArticles'
 
 export function FeedPage() {
@@ -15,6 +16,7 @@ export function FeedPage() {
     <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
       <TopicFilter />
       <CountryFilter />
+      <SortFilter />
 
       {isLoading && (
         <div className="space-y-3" data-testid="skeleton-list">

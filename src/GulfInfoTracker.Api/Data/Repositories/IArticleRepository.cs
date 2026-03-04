@@ -7,7 +7,9 @@ public record ArticleQuery(
     string? Country = null,
     string? Q = null,
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    bool ScoredOnly = false,
+    string SortBy = "newest"
 );
 
 public record ArticleQueryResult(IReadOnlyList<Article> Data, int Total);
@@ -19,6 +21,7 @@ public interface IArticleRepository
     Task<ArticleQueryResult> QueryAsync(ArticleQuery query, CancellationToken ct = default);
     Task<Article?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Article>> GetUnscoredAsync(int maxAttempts = 3, int batchSize = 20, CancellationToken ct = default);
+    Task ResetScoringAttemptsAsync(CancellationToken ct = default);
     Task UpdateScoringAsync(Guid id, int score, string reasoning, IEnumerable<string> topicIds, string? namedEntitiesJson, CancellationToken ct = default);
     Task UpdateTranslationAsync(Guid id, string? headlineAr, string? summaryAr, CancellationToken ct = default);
     Task<int> CountCorroboratingArticlesAsync(Guid excludeId, IEnumerable<string> namedEntities, DateTime publishedAt, CancellationToken ct = default);

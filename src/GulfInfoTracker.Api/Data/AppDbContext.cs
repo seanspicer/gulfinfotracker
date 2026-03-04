@@ -21,10 +21,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(a => a.CredibilityScore);
             e.HasIndex(a => a.Country);
             e.HasIndex(a => a.PluginId);
-            e.Property(a => a.NamedEntitiesJson).HasColumnType("nvarchar(max)");
-            e.Property(a => a.CredibilityReasoning).HasColumnType("nvarchar(max)");
-            e.Property(a => a.SummaryEn).HasColumnType("nvarchar(max)");
-            e.Property(a => a.SummaryAr).HasColumnType("nvarchar(max)");
+            e.Property(a => a.NamedEntitiesJson).HasColumnType("text");
+            e.Property(a => a.CredibilityReasoning).HasColumnType("text");
+            e.Property(a => a.SummaryEn).HasColumnType("text");
+            e.Property(a => a.SummaryAr).HasColumnType("text");
         });
 
         // ArticleTopic (composite PK join table)

@@ -18,7 +18,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
             .Build();
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseSqlServer(config.GetConnectionString("GulfInfoTracker"));
+        optionsBuilder.UseNpgsql(config.GetConnectionString("GulfInfoTracker"));
 
         return new AppDbContext(optionsBuilder.Options);
     }

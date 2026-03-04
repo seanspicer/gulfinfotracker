@@ -1,7 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var sql   = builder.AddAzureSqlServer("sql").RunAsContainer();
-var db    = sql.AddDatabase("GulfInfoTracker");
+var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume("gulf-info-tracker-pgdata")
+    .WithLifetime(ContainerLifetime.Persistent);
+
+var db    = postgres.AddDatabase("GulfInfoTracker");
 var redis = builder.AddAzureRedis("redis").RunAsContainer();
 
 var api = builder.AddProject<Projects.GulfInfoTracker_Api>("api")
@@ -11,7 +14,7 @@ var api = builder.AddProject<Projects.GulfInfoTracker_Api>("api")
                  .WaitFor(redis)
                  .WithExternalHttpEndpoints();
 
-builder.AddNpmApp("web", "../GulfInfoTracker.Web")
+builder.AddJavaScriptApp("web", "../GulfInfoTracker.Web")
        .WithReference(api)
        .WaitFor(api)
        .WithHttpEndpoint(env: "PORT")

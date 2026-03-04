@@ -20,6 +20,9 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
             .Include(a => a.ArticleTopics).ThenInclude(at => at.Topic)
             .AsQueryable();
 
+        if (query.ScoredOnly)
+            q = q.Where(a => a.CredibilityScore != null);
+
         if (!string.IsNullOrWhiteSpace(query.Topic))
             q = q.Where(a => a.ArticleTopics.Any(at => at.TopicId == query.Topic));
 
@@ -36,7 +39,15 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
         }
 
         var total = await q.CountAsync(ct);
-        var data  = await q.OrderByDescending(a => a.PublishedAt)
+
+        var ordered = query.SortBy switch
+        {
+            "oldest" => q.OrderBy(a => a.PublishedAt),
+            "score"  => q.OrderByDescending(a => a.CredibilityScore),
+            _        => q.OrderByDescending(a => a.PublishedAt),
+        };
+
+        var data = await ordered
                             .Skip((query.Page - 1) * query.PageSize)
                             .Take(query.PageSize)
                             .ToListAsync(ct);
@@ -56,6 +67,11 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
                 .Take(batchSize)
                 .ToListAsync(ct);
 
+    public async Task ResetScoringAttemptsAsync(CancellationToken ct = default) =>
+        await db.Articles
+                .Where(a => a.CredibilityScore == null && a.ScoringAttempts > 0)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.ScoringAttempts, 0), ct);
+
     public async Task UpdateScoringAsync(Guid id, int score, string reasoning, IEnumerable<string> topicIds, string? namedEntitiesJson, CancellationToken ct = default)
     {
         var article = await db.Articles.Include(a => a.ArticleTopics).FirstOrDefaultAsync(a => a.Id == id, ct);
@@ -65,9 +81,9 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
         article.CredibilityReasoning = reasoning;
         article.NamedEntitiesJson   = namedEntitiesJson;
 
-        // Replace topic associations
+        // Replace topic associations — only valid T1-T5 IDs are allowed
         db.ArticleTopics.RemoveRange(article.ArticleTopics);
-        foreach (var topicId in topicIds)
+        foreach (var topicId in topicIds.Where(t => t is "T1" or "T2" or "T3" or "T4" or "T5"))
         {
             db.ArticleTopics.Add(new ArticleTopic { ArticleId = id, TopicId = topicId });
         }

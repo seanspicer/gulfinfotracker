@@ -25,6 +25,12 @@
     "low": "Low",
     "pending": "Scoring pending"
   },
+  "scoredOnly": "Scored only",
+  "sort": {
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "score":  "Highest score"
+  },
   "viewOriginal": "View original source",
   "machineTranslated": "Machine translated",
   "loadMore": "Load more",

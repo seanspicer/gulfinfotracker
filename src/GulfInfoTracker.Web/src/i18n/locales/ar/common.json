@@ -25,6 +25,12 @@
     "low": "منخفض",
     "pending": "قيد التقييم"
   },
+  "scoredOnly": "المُقيَّمة فقط",
+  "sort": {
+    "newest": "الأحدث",
+    "oldest": "الأقدم",
+    "score":  "أعلى تقييم"
+  },
   "viewOriginal": "عرض المصدر الأصلي",
   "machineTranslated": "ترجمة آلية",
   "loadMore": "تحميل المزيد",

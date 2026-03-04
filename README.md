@@ -1,6 +1,6 @@
 # Gulf Info Tracker
 
-A bilingual (English/Arabic) news aggregator for the Gulf region. Articles are ingested from government press agencies and international news outlets via RSS, scored for credibility by a two-agent Claude AI pipeline, and served through a React frontend.
+A bilingual (English/Arabic) news aggregator for the Gulf region. Articles are ingested from government press agencies and international news outlets via RSS, scored for credibility by a two-agent AI pipeline, and served through a React frontend.
 
 ---
 
@@ -8,16 +8,16 @@ A bilingual (English/Arabic) news aggregator for the Gulf region. Articles are i
 
 | Tool | Version |
 |---|---|
-| .NET SDK | 9.0+ |
-| Docker Desktop | Running (Aspire launches SQL Server and Redis containers) |
+| .NET SDK | 10.0+ |
+| Docker Desktop | Running (Aspire launches PostgreSQL and Redis containers) |
 | Node.js | 20+ (LTS) |
-| Anthropic API key | Optional — scoring and translation are skipped when absent |
+| OpenAI API key | Optional — scoring is skipped when absent (Claude is also supported) |
 
 ---
 
 ## Running with .NET Aspire
 
-Aspire orchestrates every service in a single command. It starts SQL Server and Redis as containers, runs the ASP.NET Core API, and launches the Vite dev server.
+Aspire orchestrates every service in a single command. It starts PostgreSQL and Redis as containers, runs the ASP.NET Core API, and launches the Vite dev server.
 
 ```bash
 dotnet run --project src/GulfInfoTracker.AppHost
@@ -25,16 +25,17 @@ dotnet run --project src/GulfInfoTracker.AppHost
 
 Once running, open the **Aspire dashboard** at `https://localhost:15888` to view logs, traces, and health checks for every resource.
 
-> **Note:** On first run, Docker will pull the SQL Server and Redis images. This may take a minute.
+> **Note:** On first run, Docker will pull the PostgreSQL and Redis images. This may take a minute.
+> The PostgreSQL data is stored in a named Docker volume (`gulf-info-tracker-pgdata`) and **persists across restarts**. To wipe the database: `docker volume rm gulf-info-tracker-pgdata`.
 
-### Setting the Claude API key (local dev)
+### Setting the AI API key (local dev)
 
-Create or edit `src/GulfInfoTracker.Api/appsettings.Development.json`:
+The default AI provider is **OpenAI**. Set the key in `src/GulfInfoTracker.Api/appsettings.Development.json`:
 
 ```json
 {
-  "Claude": {
-    "ApiKey": "sk-ant-..."
+  "OpenAi": {
+    "ApiKey": "sk-..."
   }
 }
 ```
@@ -42,11 +43,24 @@ Create or edit `src/GulfInfoTracker.Api/appsettings.Development.json`:
 Alternatively, export the environment variable before running:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
 dotnet run --project src/GulfInfoTracker.AppHost
 ```
 
-Without an API key the application still runs — articles are ingested and stored, but credibility scoring and AR/EN translation are disabled.
+To use **Claude** instead, set `AiProvider` to `"Claude"` and supply the Anthropic key:
+
+```json
+{
+  "AiProvider": "Claude",
+  "Claude": {
+    "ApiKey": "sk-ant-..."
+  }
+}
+```
+
+Or via environment variable: `ANTHROPIC_API_KEY`.
+
+Without any API key the application still runs — articles are ingested and stored, but credibility scoring is disabled.
 
 ---
 
@@ -56,27 +70,30 @@ The API is served by the ASP.NET Core project (`GulfInfoTracker.Api`). All endpo
 
 ### `GET /api/articles`
 
-Returns a paged list of articles. Results are Redis-cached.
+Returns a paged list of scored articles. Results are Redis-cached.
 
 **Query parameters:**
 
-| Parameter | Type | Description |
-|---|---|---|
-| `topic` | string | Filter by topic ID (`T1`–`T5`) |
-| `country` | string | Filter by ISO country code (`UAE`, `SA`, `QA`, `BH`, `KW`, `OM`, `INTL`) |
-| `q` | string | Full-text search across headline and summary |
-| `page` | int | Page number (default: `1`) |
-| `pageSize` | int | Articles per page (default: `20`, max: `100`) |
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `topic` | string | — | Filter by topic ID (`T1`–`T5`) |
+| `country` | string | — | Filter by ISO country code (`UAE`, `SA`, `QA`, `BH`, `KW`, `OM`, `INTL`) |
+| `q` | string | — | Full-text search across headline and summary |
+| `sortBy` | string | `newest` | Sort order: `newest`, `oldest`, or `score` |
+| `page` | int | `1` | Page number |
+| `pageSize` | int | `20` | Articles per page (max: `100`) |
+
+> Only articles with a credibility score are returned. Unscored articles are held back until the AI pipeline processes them.
 
 **Example:**
 
 ```
-GET /api/articles?country=UAE&topic=T2&page=1&pageSize=10
+GET /api/articles?country=UAE&topic=T2&sortBy=score&page=1&pageSize=10
 ```
 
 ### `GET /api/articles/{id}`
 
-Returns a single article by ID, including named entities, topic tags, and credibility score.
+Returns a single article by ID, including named entities, topic tags, credibility score, and reasoning.
 
 ### `GET /api/sources`
 
@@ -161,24 +178,31 @@ See **[PLUGIN_GUIDE.md](PLUGIN_GUIDE.md)** for a full walkthrough. The short ver
 
 ## AI Pipeline
 
-When a Claude API key is present, two agents run sequentially on each ingested article:
+Credibility scoring runs automatically in the background (`ScoringBackgroundService`) once an API key is configured. Two agents run sequentially on each ingested article:
 
-1. **ExtractionAgent** (`claude-opus-4-6`) — extracts named entities, factual claims, and an internal consistency rating.
-2. **ScoringAgent** (`claude-opus-4-6`) — produces a 0–100 credibility score, a reasoning summary, and 1–3 topic tags (T1–T5).
+1. **ExtractionAgent** — extracts named entities, factual claims, and an internal consistency rating.
+2. **ScoringAgent** — produces a 0–100 credibility score, a reasoning summary, and 1–3 topic tags (T1–T5).
 
-Translation between Arabic and English uses **`claude-haiku-4-5-20251001`**.
+The active provider is controlled by the `AiProvider` config key:
 
-Both scoring and translation background services are registered but currently paused (`ScoringBackgroundService` and `TranslationBackgroundService` are commented out in `Program.cs`). Scoring can be triggered manually via the pipeline interfaces for individual articles.
+| `AiProvider` | Models used |
+|---|---|
+| `OpenAi` (default) | `gpt-4.1-nano` for both extraction and scoring |
+| `Claude` | `claude-opus-4-6` for both extraction and scoring |
+
+Topic IDs returned by the model are validated against the T1–T5 set before being persisted. Invalid values are silently dropped.
+
+> AR↔EN translation is implemented (`TranslationBackgroundService`) but currently disabled. It can be re-enabled in `Program.cs`.
 
 ### Topics
 
 | ID | English | Arabic |
 |---|---|---|
-| T1 | Politics & Governance | السياسة والحوكمة |
-| T2 | Economy & Business | الاقتصاد والأعمال |
-| T3 | Energy & Environment | الطاقة والبيئة |
-| T4 | Security & Defence | الأمن والدفاع |
-| T5 | Society & Culture | المجتمع والثقافة |
+| T1 | Politics & Government | السياسة والحكومة |
+| T2 | Economy & Finance | الاقتصاد والمالية |
+| T3 | Energy & Oil | الطاقة والنفط |
+| T4 | Business & Investment | الأعمال والاستثمار |
+| T5 | Iran / Israel / US Conflict | الصراع الإيراني / الإسرائيلي / الأمريكي |
 
 ---
 
@@ -188,16 +212,16 @@ Both scoring and translation background services are registered but currently pa
 Browser
   └─→ Vite dev server (proxy)
         └─→ ASP.NET Core API
-              ├─→ SQL Server  (articles, topics, poll logs)
+              ├─→ PostgreSQL  (articles, topics, poll logs)
               ├─→ Redis       (API response cache)
-              └─→ Claude API  (credibility scoring, translation)
+              └─→ OpenAI / Claude API  (credibility scoring)
 ```
 
 ### Project map
 
 | Project | Role |
 |---|---|
-| `GulfInfoTracker.AppHost` | .NET Aspire orchestrator |
+| `GulfInfoTracker.AppHost` | .NET Aspire 13 orchestrator |
 | `GulfInfoTracker.ServiceDefaults` | Shared OpenTelemetry, health checks, service discovery |
 | `GulfInfoTracker.Api` | ASP.NET Core Web API, EF Core, background services, AI pipeline |
 | `GulfInfoTracker.Plugins` | `ISourcePlugin` implementations — no dependency on the API |

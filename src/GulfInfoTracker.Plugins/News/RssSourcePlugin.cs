@@ -30,6 +30,13 @@ public abstract class RssSourcePlugin(SourceConfig config, HttpClient http) : IS
 
             var body = ExtractBodyFromItem(item);
 
+            if (UseArchiveFallback && WordCount(body) < 200)
+            {
+                var archiveBody = await TryArchiveIsFallbackAsync(url, ct);
+                if (archiveBody is not null)
+                    body = archiveBody;
+            }
+
             results.Add(new RawArticle(
                 Url: url,
                 HeadlineEn: item.Title?.Text ?? string.Empty,
@@ -59,6 +66,8 @@ public abstract class RssSourcePlugin(SourceConfig config, HttpClient http) : IS
             OriginalLanguage: raw.OriginalLanguage
         );
     }
+
+    protected virtual bool UseArchiveFallback => false;
 
     protected virtual string ExtractBodyFromItem(SyndicationItem item) =>
         System.Text.RegularExpressions.Regex.Replace(item.Summary?.Text ?? string.Empty, "<[^>]+>", " ").Trim();

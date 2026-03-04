@@ -1,11 +1,12 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace GulfInfoTracker.Api.Data.Migrations
+namespace GulfInfoTracker.Api.Migrations
 {
     /// <inheritdoc />
     public partial class InitialSchema : Migration
@@ -17,22 +18,22 @@ namespace GulfInfoTracker.Api.Data.Migrations
                 name: "Articles",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PluginId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    HeadlineEn = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    HeadlineAr = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SummaryEn = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SummaryAr = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SourceUrl = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IngestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CredibilityScore = table.Column<int>(type: "int", nullable: true),
-                    CredibilityReasoning = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FullText = table.Column<bool>(type: "bit", nullable: false),
-                    Translated = table.Column<bool>(type: "bit", nullable: false),
-                    ScoringAttempts = table.Column<int>(type: "int", nullable: false),
-                    NamedEntitiesJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PluginId = table.Column<string>(type: "text", nullable: false),
+                    HeadlineEn = table.Column<string>(type: "text", nullable: false),
+                    HeadlineAr = table.Column<string>(type: "text", nullable: true),
+                    SummaryEn = table.Column<string>(type: "text", nullable: true),
+                    SummaryAr = table.Column<string>(type: "text", nullable: true),
+                    SourceUrl = table.Column<string>(type: "text", nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IngestedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Country = table.Column<string>(type: "text", nullable: false),
+                    CredibilityScore = table.Column<int>(type: "integer", nullable: true),
+                    CredibilityReasoning = table.Column<string>(type: "text", nullable: true),
+                    FullText = table.Column<bool>(type: "boolean", nullable: false),
+                    Translated = table.Column<bool>(type: "boolean", nullable: false),
+                    ScoringAttempts = table.Column<int>(type: "integer", nullable: false),
+                    NamedEntitiesJson = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -43,13 +44,13 @@ namespace GulfInfoTracker.Api.Data.Migrations
                 name: "SourcePollLogs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PluginId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PolledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Success = table.Column<bool>(type: "bit", nullable: false),
-                    ArticlesIngested = table.Column<int>(type: "int", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PluginId = table.Column<string>(type: "text", nullable: false),
+                    PolledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    ArticlesIngested = table.Column<int>(type: "integer", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -60,9 +61,9 @@ namespace GulfInfoTracker.Api.Data.Migrations
                 name: "Topics",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LabelEn = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LabelAr = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    LabelEn = table.Column<string>(type: "text", nullable: false),
+                    LabelAr = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,8 +74,8 @@ namespace GulfInfoTracker.Api.Data.Migrations
                 name: "ArticleTopics",
                 columns: table => new
                 {
-                    ArticleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TopicId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    ArticleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TopicId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

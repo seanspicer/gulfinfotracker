@@ -7,10 +7,11 @@ export function useArticles(page = 1) {
   const topic   = searchParams.get('topic')   || undefined
   const country = searchParams.get('country') || undefined
   const q       = searchParams.get('q')       || undefined
+  const sortBy  = searchParams.get('sortBy')  || undefined
 
   return useQuery({
-    queryKey: ['articles', { topic, country, q, page }],
-    queryFn: () => apiClient.getArticles({ topic, country, q, page, pageSize: 20 }),
+    queryKey: ['articles', { topic, country, q, sortBy, page }],
+    queryFn: () => apiClient.getArticles({ topic, country, q, sortBy, page, pageSize: 20 }),
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 30,
   })

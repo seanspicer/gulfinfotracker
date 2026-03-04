@@ -1,5 +1,3 @@
-using Anthropic.SDK;
-using GulfInfoTracker.Api.AI;
 using GulfInfoTracker.Api.Data;
 using GulfInfoTracker.Api.Data.Repositories;
 using GulfInfoTracker.Api.Extensions;
@@ -15,7 +13,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 // EF Core via Aspire integration
-builder.AddSqlServerDbContext<AppDbContext>("GulfInfoTracker");
+builder.AddNpgsqlDbContext<AppDbContext>("GulfInfoTracker");
 
 // Redis via Aspire integration
 builder.AddRedisClient("redis");
@@ -34,15 +32,9 @@ builder.Services.AddScoped<IIngestionProcessor, IngestionProcessor>();
 builder.Services.AddHostedService<IngestionService>();
 
 // AI pipeline
-var claudeApiKey = builder.Configuration["Claude:ApiKey"] ?? builder.Configuration["ANTHROPIC_API_KEY"];
-if (!string.IsNullOrWhiteSpace(claudeApiKey))
-{
-    builder.Services.AddSingleton(new AnthropicClient(claudeApiKey));
-    builder.Services.AddScoped<ICredibilityPipeline, ClaudeCredibilityPipeline>();
-    builder.Services.AddScoped<ITranslationAgent, ClaudeTranslationAgent>();
-    // builder.Services.AddHostedService<ScoringBackgroundService>();
-    // builder.Services.AddHostedService<TranslationBackgroundService>();
-}
+builder.Services.AddAiServices(builder.Configuration);
+builder.Services.AddHostedService<ScoringBackgroundService>();
+// builder.Services.AddHostedService<TranslationBackgroundService>();
 
 // CORS
 builder.Services.AddCors(options =>

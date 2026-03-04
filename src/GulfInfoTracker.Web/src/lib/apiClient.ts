@@ -47,14 +47,16 @@ export const apiClient = {
     topic?: string
     country?: string
     q?: string
+    sortBy?: string
     page?: number
     pageSize?: number
   }) => {
     const sp = new URLSearchParams()
-    if (params.topic)   sp.set('topic',    params.topic)
-    if (params.country) sp.set('country',  params.country)
-    if (params.q)       sp.set('q',        params.q)
-    if (params.page)    sp.set('page',     String(params.page))
+    if (params.topic)    sp.set('topic',    params.topic)
+    if (params.country)  sp.set('country',  params.country)
+    if (params.q)        sp.set('q',        params.q)
+    if (params.sortBy)   sp.set('sortBy',   params.sortBy)
+    if (params.page)     sp.set('page',     String(params.page))
     if (params.pageSize) sp.set('pageSize', String(params.pageSize))
     return apiFetch<PagedResult<ArticleListItem>>(`/api/articles?${sp}`)
   },
