@@ -1,4 +1,5 @@
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || ''
+const API_TOKEN = (import.meta.env.VITE_API_BEARER_TOKEN as string) || ''
 
 export interface ArticleListItem {
   id: string
@@ -36,8 +37,9 @@ export interface SourceHealth {
   lastError: string | null
 }
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`)
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {}
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers })
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
@@ -69,9 +71,6 @@ export const apiClient = {
   getSources: () =>
     apiFetch<SourceHealth[]>('/api/sources'),
 
-  triggerPoll: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/api/sources/${id}/poll`, { method: 'POST' })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return res.json()
-  },
+  triggerPoll: (id: string) =>
+    apiFetch<unknown>(`/api/sources/${id}/poll`, { method: 'POST' }),
 }

@@ -28,6 +28,18 @@ Once running, open the **Aspire dashboard** at `https://localhost:15888` to view
 > **Note:** On first run, Docker will pull the PostgreSQL and Redis images. This may take a minute.
 > The PostgreSQL data is stored in a named Docker volume (`gulf-info-tracker-pgdata`) and **persists across restarts**. To wipe the database: `docker volume rm gulf-info-tracker-pgdata`.
 
+### Configuration reference
+
+All secrets can be set either in `src/GulfInfoTracker.Api/appsettings.Development.json` or as environment variables. Environment variables use `__` as a section separator (e.g. `Api__BearerToken`).
+
+| Config key | Env var | Description |
+|---|---|---|
+| `Api:BearerToken` | `Api__BearerToken` | Bearer token required on all `/api/*` requests. Leave empty to skip auth (dev only). |
+| `AiProvider` | `AiProvider` | `"OpenAi"` (default) or `"Claude"` |
+| `OpenAi:ApiKey` | `OPENAI_API_KEY` | OpenAI key for GPT-based credibility scoring |
+| `Claude:ApiKey` | `ANTHROPIC_API_KEY` | Anthropic key for Claude-based scoring |
+| `X:BearerToken` | `X_BEARER_TOKEN` | X (Twitter) API v2 key — only needed if an X source plugin is enabled |
+
 ### Setting the AI API key (local dev)
 
 The default AI provider is **OpenAI**. Set the key in `src/GulfInfoTracker.Api/appsettings.Development.json`:
@@ -68,44 +80,212 @@ Without any API key the application still runs — articles are ingested and sto
 
 The API is served by the ASP.NET Core project (`GulfInfoTracker.Api`). All endpoints are under `/api/`.
 
+### Authentication
+
+Every `/api/*` request must include a bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer <your-token>
+```
+
+Configure the expected token in `src/GulfInfoTracker.Api/appsettings.Development.json`:
+
+```json
+{
+  "Api": { "BearerToken": "my-secret-token" }
+}
+```
+
+Or set the environment variable `Api__BearerToken=my-secret-token`.
+
+The frontend reads the same token from `src/GulfInfoTracker.Web/.env.local`:
+
+```
+VITE_API_BEARER_TOKEN=my-secret-token
+```
+
+| Scenario | Result |
+|---|---|
+| Correct token | Request proceeds normally |
+| Wrong or missing token | `401 Unauthorized` + `WWW-Authenticate: Bearer` header |
+| Token not configured (empty) | Warning logged; all requests pass through (dev convenience) |
+
+Health check endpoints (`/healthz`, etc.) and the OpenAPI spec (`/openapi/v1.json`) are **not** protected.
+
+---
+
 ### `GET /api/articles`
 
-Returns a paged list of scored articles. Results are Redis-cached.
+Returns a paged list of **scored** articles. Results are Redis-cached. Unscored articles are held back until the AI pipeline processes them.
 
 **Query parameters:**
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `topic` | string | — | Filter by topic ID (`T1`–`T5`) |
-| `country` | string | — | Filter by ISO country code (`UAE`, `SA`, `QA`, `BH`, `KW`, `OM`, `INTL`) |
-| `q` | string | — | Full-text search across headline and summary |
-| `sortBy` | string | `newest` | Sort order: `newest`, `oldest`, or `score` |
-| `page` | int | `1` | Page number |
-| `pageSize` | int | `20` | Articles per page (max: `100`) |
+| `topic` | string | — | Filter by topic ID: `T1` – `T5` |
+| `country` | string | — | Filter by country code: `UAE`, `SA`, `QA`, `BH`, `KW`, `OM`, `INTL` |
+| `q` | string | — | Full-text search across EN headline and summary |
+| `sortBy` | string | `newest` | `newest`, `oldest`, or `score` |
+| `page` | int | `1` | Page number (min: 1) |
+| `pageSize` | int | `20` | Items per page (max: 100) |
+| `sources` | string[] | — | Repeated param — filter to specific plugin IDs. Can be specified multiple times. |
 
-> Only articles with a credibility score are returned. Unscored articles are held back until the AI pipeline processes them.
+**Example request:**
 
-**Example:**
-
+```bash
+curl "https://localhost:5001/api/articles?country=UAE&topic=T2&sortBy=score&sources=gulf-news&sources=the-national" \
+  -H "Authorization: Bearer my-secret-token"
 ```
-GET /api/articles?country=UAE&topic=T2&sortBy=score&page=1&pageSize=10
+
+**Response `200 OK`:**
+
+```json
+{
+  "data": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "pluginId": "gulf-news",
+      "headlineEn": "UAE announces new economic zone",
+      "headlineAr": "الإمارات تعلن عن منطقة اقتصادية جديدة",
+      "summaryEn": "The UAE government announced plans for a new free-trade zone...",
+      "summaryAr": null,
+      "sourceUrl": "https://gulfnews.com/uae/economy/uae-announces-new-economic-zone-1.12345",
+      "publishedAt": "2026-01-15T09:30:00Z",
+      "country": "UAE",
+      "credibilityScore": 82,
+      "fullText": true,
+      "translated": false,
+      "topicIds": ["T2", "T4"]
+    }
+  ],
+  "total": 347,
+  "page": 1,
+  "pageSize": 20
+}
 ```
+
+| Field | Type | Description |
+|---|---|---|
+| `data` | array | Articles for the current page |
+| `total` | int | Total matching articles (across all pages) |
+| `page` | int | Current page number |
+| `pageSize` | int | Items per page |
+| `data[].id` | uuid | Article identifier |
+| `data[].pluginId` | string | Source plugin that ingested this article |
+| `data[].headlineEn` | string | English headline |
+| `data[].headlineAr` | string\|null | Arabic headline (null until translated) |
+| `data[].summaryEn` | string\|null | English summary |
+| `data[].summaryAr` | string\|null | Arabic summary (null until translated) |
+| `data[].sourceUrl` | string | Canonical URL of the original article |
+| `data[].publishedAt` | ISO 8601 | Article publication timestamp |
+| `data[].country` | string | Country code (e.g. `UAE`, `INTL`) |
+| `data[].credibilityScore` | int\|null | 0–100 score; null if not yet scored |
+| `data[].fullText` | bool | Whether full article body was captured |
+| `data[].translated` | bool | Whether AR↔EN translation has been applied |
+| `data[].topicIds` | string[] | Topic tags assigned by the AI (subset of T1–T5) |
+
+---
 
 ### `GET /api/articles/{id}`
 
-Returns a single article by ID, including named entities, topic tags, credibility score, and reasoning.
+Returns full detail for a single article, including the AI's credibility reasoning and ingestion timestamp.
+
+```bash
+curl "https://localhost:5001/api/articles/3fa85f64-5717-4562-b3fc-2c963f66afa6" \
+  -H "Authorization: Bearer my-secret-token"
+```
+
+**Response `200 OK`:**
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "pluginId": "gulf-news",
+  "headlineEn": "UAE announces new economic zone",
+  "headlineAr": "الإمارات تعلن عن منطقة اقتصادية جديدة",
+  "summaryEn": "The UAE government announced plans for a new free-trade zone...",
+  "summaryAr": null,
+  "sourceUrl": "https://gulfnews.com/uae/economy/uae-announces-new-economic-zone-1.12345",
+  "publishedAt": "2026-01-15T09:30:00Z",
+  "ingestedAt": "2026-01-15T09:45:12Z",
+  "country": "UAE",
+  "credibilityScore": 82,
+  "credibilityReasoning": "The article cites named officials and references a verifiable government announcement. No contradictory claims were detected across corroborating sources.",
+  "fullText": true,
+  "translated": false,
+  "topicIds": ["T2", "T4"]
+}
+```
+
+All fields from `ArticleListItem` are included, plus:
+
+| Field | Type | Description |
+|---|---|---|
+| `ingestedAt` | ISO 8601 | When the article was first stored in the database |
+| `credibilityReasoning` | string\|null | AI-generated explanation of the credibility score |
+
+**`404 Not Found`** is returned when the ID does not exist.
+
+---
 
 ### `GET /api/sources`
 
-Returns health information for every registered plugin: last poll time, number of articles ingested in the last 24 hours, and the last error message (if any).
+Returns a health snapshot for every registered plugin: when it was last polled, how many articles it produced in the past 24 hours, and any recent error.
+
+```bash
+curl "https://localhost:5001/api/sources" \
+  -H "Authorization: Bearer my-secret-token"
+```
+
+**Response `200 OK`:**
+
+```json
+[
+  {
+    "pluginId": "gulf-news",
+    "displayName": "Gulf News",
+    "lastPolledAt": "2026-01-15T10:00:00Z",
+    "articlesLast24h": 14,
+    "lastError": null
+  },
+  {
+    "pluginId": "wsj",
+    "displayName": "Wall Street Journal",
+    "lastPolledAt": "2026-01-15T09:45:00Z",
+    "articlesLast24h": 3,
+    "lastError": "HTTP 429: rate limited by archive.is"
+  }
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `pluginId` | string | Unique plugin identifier (matches `sources.json`) |
+| `displayName` | string | Human-readable source name |
+| `lastPolledAt` | ISO 8601\|null | Last successful poll timestamp; null if never polled |
+| `articlesLast24h` | int | Articles ingested from this source in the past 24 hours |
+| `lastError` | string\|null | Most recent error message; null if last poll succeeded |
+
+---
 
 ### `POST /api/sources/{id}/poll`
 
-Manually triggers an immediate poll for the given plugin ID (e.g. `gulf-news`, `qatar-qna`). Useful during development or to force a refresh after enabling a new source.
+Manually triggers an immediate ingest cycle for the named plugin. Useful during development or after enabling a new source. The poll runs asynchronously — the response is returned before ingestion completes.
 
 ```bash
-curl -X POST https://localhost:5001/api/sources/gulf-news/poll
+curl -X POST "https://localhost:5001/api/sources/gulf-news/poll" \
+  -H "Authorization: Bearer my-secret-token"
 ```
+
+**Response `200 OK`:**
+
+```json
+{ "message": "Poll triggered for 'gulf-news'." }
+```
+
+**`404 Not Found`** is returned when no plugin with that ID is registered.
+
+---
 
 ### OpenAPI / Swagger
 

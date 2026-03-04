@@ -1,6 +1,7 @@
 using GulfInfoTracker.Api.Data;
 using GulfInfoTracker.Api.Data.Repositories;
 using GulfInfoTracker.Api.Extensions;
+using GulfInfoTracker.Api.Middleware;
 using GulfInfoTracker.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,6 +58,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseWhen(
+    ctx => ctx.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseMiddleware<BearerTokenMiddleware>()
+);
 app.MapControllers();
 
 // Apply pending EF migrations on startup
