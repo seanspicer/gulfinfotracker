@@ -21,14 +21,14 @@ public class PluginFactoryTests
     {
         var configs = new[]
         {
-            new SourceConfig("uae-gov", "UAE Gov", "UAE", "government", true, 15, "https://example.com/rss")
+            new SourceConfig("gulf-news", "Gulf News", "UAE", "news", true, 30, "https://example.com/rss")
         };
         var factory = CreateFactory(configs);
 
         var plugins = factory.GetEnabledPlugins();
 
         Assert.That(plugins, Has.Count.EqualTo(1));
-        Assert.That(plugins[0].PluginId, Is.EqualTo("uae-gov"));
+        Assert.That(plugins[0].PluginId, Is.EqualTo("gulf-news"));
     }
 
     [Test]
@@ -36,7 +36,7 @@ public class PluginFactoryTests
     {
         var configs = new[]
         {
-            new SourceConfig("uae-gov", "UAE Gov", "UAE", "government", false, 15, "https://example.com/rss")
+            new SourceConfig("gulf-news", "Gulf News", "UAE", "news", false, 30, "https://example.com/rss")
         };
         var factory = CreateFactory(configs);
 
@@ -50,15 +50,15 @@ public class PluginFactoryTests
     {
         var configs = new[]
         {
-            new SourceConfig("uae-gov",    "UAE Gov",    "UAE",  "government", true,  15, "https://example.com/rss"),
-            new SourceConfig("saudi-spa",  "Saudi SPA",  "SA",   "government", false, 15, "https://example.com/rss"),
-            new SourceConfig("ft",         "FT",         "INTL", "news",       true,  30, "https://example.com/rss"),
+            new SourceConfig("gulf-news",    "Gulf News",    "UAE",  "news",       true,  30, "https://example.com/rss"),
+            new SourceConfig("saudi-gazette","Saudi Gazette","SA",   "news",       false, 30, "https://example.com/rss"),
+            new SourceConfig("wsj",          "WSJ",          "INTL", "news",       true,  30, "https://example.com/rss"),
         };
         var factory = CreateFactory(configs);
 
         var plugins = factory.GetEnabledPlugins();
 
         Assert.That(plugins, Has.Count.EqualTo(2));
-        Assert.That(plugins.Select(p => p.PluginId), Does.Not.Contain("saudi-spa"));
+        Assert.That(plugins.Select(p => p.PluginId), Does.Not.Contain("saudi-gazette"));
     }
 }

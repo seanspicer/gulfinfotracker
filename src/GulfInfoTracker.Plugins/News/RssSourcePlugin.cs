@@ -30,11 +30,6 @@ public abstract class RssSourcePlugin(SourceConfig config, HttpClient http) : IS
 
             var body = ExtractBodyFromItem(item);
 
-            if (WordCount(body) < 200)
-            {
-                body = await TryArchiveIsFallbackAsync(url, ct) ?? body;
-            }
-
             results.Add(new RawArticle(
                 Url: url,
                 HeadlineEn: item.Title?.Text ?? string.Empty,

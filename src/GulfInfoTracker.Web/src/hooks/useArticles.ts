@@ -12,5 +12,6 @@ export function useArticles(page = 1) {
     queryKey: ['articles', { topic, country, q, page }],
     queryFn: () => apiClient.getArticles({ topic, country, q, page, pageSize: 20 }),
     staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 30,
   })
 }

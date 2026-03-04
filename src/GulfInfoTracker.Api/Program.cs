@@ -40,8 +40,8 @@ if (!string.IsNullOrWhiteSpace(claudeApiKey))
     builder.Services.AddSingleton(new AnthropicClient(claudeApiKey));
     builder.Services.AddScoped<ICredibilityPipeline, ClaudeCredibilityPipeline>();
     builder.Services.AddScoped<ITranslationAgent, ClaudeTranslationAgent>();
-    builder.Services.AddHostedService<ScoringBackgroundService>();
-    builder.Services.AddHostedService<TranslationBackgroundService>();
+    // builder.Services.AddHostedService<ScoringBackgroundService>();
+    // builder.Services.AddHostedService<TranslationBackgroundService>();
 }
 
 // CORS

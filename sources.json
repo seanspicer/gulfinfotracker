@@ -1,21 +1,57 @@
 [
   {
-    "pluginId": "uae-gov",
-    "displayName": "UAE Government Portal",
+    "pluginId": "gulf-news",
+    "displayName": "Gulf News",
+    "country": "UAE",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://gulfnews.com/stories.rss"
+  },
+  {
+    "pluginId": "khaleej-times",
+    "displayName": "Khaleej Times",
+    "country": "UAE",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.khaleejtimes.com/api/v1/collections/top-section.rss"
+  },
+  {
+    "pluginId": "the-national",
+    "displayName": "The National",
+    "country": "UAE",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml"
+  },
+  {
+    "pluginId": "arabian-business",
+    "displayName": "Arabian Business",
+    "country": "UAE",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.arabianbusiness.com/feed"
+  },
+  {
+    "pluginId": "uae-ncema",
+    "displayName": "UAE National Media Center (NCEMA)",
     "country": "UAE",
     "type": "government",
     "enabled": true,
     "pollIntervalMinutes": 15,
-    "feedUrl": "https://www.uaecabinet.ae/en/rss"
+    "feedUrl": "https://www.ncema.gov.ae/rss/news.ashx"
   },
   {
-    "pluginId": "saudi-spa",
-    "displayName": "Saudi Press Agency",
-    "country": "SA",
+    "pluginId": "uae-mod",
+    "displayName": "UAE Ministry of Defence",
+    "country": "UAE",
     "type": "government",
-    "enabled": true,
-    "pollIntervalMinutes": 15,
-    "feedUrl": "https://www.spa.gov.sa/rss.php"
+    "enabled": false,
+    "pollIntervalMinutes": 60,
+    "feedUrl": "https://mod.gov.ae/category/news/feed/"
   },
   {
     "pluginId": "qatar-qna",
@@ -24,25 +60,124 @@
     "type": "government",
     "enabled": true,
     "pollIntervalMinutes": 15,
-    "feedUrl": "https://www.qna.org.qa/en/News/Rss"
+    "feedUrl": "https://qna.org.qa/en/Pages/RSS-Feeds/Qatar"
+  },
+  {
+    "pluginId": "qatar-qna-economy",
+    "displayName": "Qatar News Agency — Economy",
+    "country": "QA",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://qna.org.qa/en/Pages/RSS-Feeds/Economy-Local"
+  },
+  {
+    "pluginId": "al-jazeera",
+    "displayName": "Al Jazeera English",
+    "country": "QA",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.aljazeera.com/xml/rss/all.xml"
+  },
+  {
+    "pluginId": "kuwait-times",
+    "displayName": "Kuwait Times",
+    "country": "KW",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://kuwaittimes.com/rssFeed/0"
+  },
+  {
+    "pluginId": "saudi-gazette",
+    "displayName": "Saudi Gazette",
+    "country": "SA",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://saudigazette.com.sa/rssFeed/74"
+  },
+  {
+    "pluginId": "saudi-gazette-economy",
+    "displayName": "Saudi Gazette — Economy",
+    "country": "SA",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://saudigazette.com.sa/rssFeed/46"
+  },
+  {
+    "pluginId": "oman-ona",
+    "displayName": "Oman News Agency",
+    "country": "OM",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://omannews.gov.om/rss/lang/en/cat/79"
+  },
+  {
+    "pluginId": "oman-ona-economy",
+    "displayName": "Oman News Agency — Economy",
+    "country": "OM",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://omannews.gov.om/rss/lang/en/cat/80"
+  },
+  {
+    "pluginId": "times-of-oman",
+    "displayName": "Times of Oman",
+    "country": "OM",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://timesofoman.com/feed/"
+  },
+  {
+    "pluginId": "muscat-daily",
+    "displayName": "Muscat Daily",
+    "country": "OM",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://www.muscatdaily.com/feed/"
   },
   {
     "pluginId": "bahrain-bna",
     "displayName": "Bahrain News Agency",
     "country": "BH",
     "type": "government",
-    "enabled": false,
+    "enabled": true,
     "pollIntervalMinutes": 15,
-    "feedUrl": "https://www.bna.bh/en/rss"
+    "feedUrl": "https://api.bna.bh/rss/local-news"
   },
   {
-    "pluginId": "ft",
-    "displayName": "Financial Times",
+    "pluginId": "bahrain-bna-business",
+    "displayName": "Bahrain News Agency — Business",
+    "country": "BH",
+    "type": "government",
+    "enabled": true,
+    "pollIntervalMinutes": 15,
+    "feedUrl": "https://api.bna.bh/rss/business"
+  },
+  {
+    "pluginId": "bloomberg-markets",
+    "displayName": "Bloomberg Markets",
     "country": "INTL",
     "type": "news",
-    "enabled": false,
+    "enabled": true,
     "pollIntervalMinutes": 30,
-    "feedUrl": "https://www.ft.com/rss/home/middle-east"
+    "feedUrl": "https://feeds.bloomberg.com/markets/news.rss"
+  },
+  {
+    "pluginId": "bloomberg-economics",
+    "displayName": "Bloomberg Economics",
+    "country": "INTL",
+    "type": "news",
+    "enabled": true,
+    "pollIntervalMinutes": 30,
+    "feedUrl": "https://feeds.bloomberg.com/economics/news.rss"
   },
   {
     "pluginId": "wsj",
